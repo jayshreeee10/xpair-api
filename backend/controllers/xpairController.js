@@ -1,0 +1,46 @@
+const pool = require('../models/db');
+const { buildJSON } = require('../utils/jsonBuilder');
+
+exports.getXpairData = async (req, res) => {
+  const { xpair_io_id } = req.body;
+
+  if (!xpair_io_id) {
+    return res.status(400).json({ error: "xpair_io_id is required" });
+  }
+
+  try {
+    const { rows: ioDetails } = await pool.query(
+      `SELECT * FROM xpair_io_master WHERE xpair_io_id = $1`,
+      [xpair_io_id]
+    );
+
+    if (ioDetails.length === 0) {
+      return res.status(404).json({ error: 'Invalid xpair_io_id' });
+    }
+
+    const { rows: attributes } = await pool.query(
+      `SELECT * FROM xpair_attribute_master WHERE xpair_io_id = $1 ORDER BY placement_sequence ASC`,
+      [xpair_io_id]
+    );
+
+    const { rows: attributeMasters } = await pool.query(
+      `SELECT * FROM attribute_master`
+    );
+
+    const attributeMap = {};
+    attributeMasters.forEach(attr => {
+      attributeMap[attr.attribute_id] = attr;
+    });
+
+    const output = buildJSON(attributes, {}, attributeMap);
+
+    return res.json({
+      io_details: ioDetails[0],
+      data: output
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
