@@ -2,22 +2,22 @@ const pool = require('../models/db');
 const { buildJSON } = require('../utils/jsonBuilder');
 
 exports.getXpairData = async (req, res) => {
-  const { xpair_io_id } = req.body;
+  const { xpair_io_name } = req.body;
 
-  if (!xpair_io_id) {
-    return res.status(400).json({ error: "xpair_io_id is required" });
+  if (!xpair_io_name) {
+    return res.status(400).json({ error: "xpair_io_name is required" });
   }
 
   try {
     const { rows: ioDetails } = await pool.query(
-      `SELECT * FROM xpair_io_master WHERE xpair_io_id = $1`,
-      [xpair_io_id]
+      `SELECT * FROM xpair_io_master WHERE xpair_io_name = $1`,
+      [xpair_io_name]
     );
 
     if (ioDetails.length === 0) {
-      return res.status(404).json({ error: 'Invalid xpair_io_id' });
+      return res.status(404).json({ error: 'Invalid xpair_io_name' });
     }
-
+    const xpair_io_id = ioDetails[0].xpair_io_id;
     const { rows: attributes } = await pool.query(
       `SELECT * FROM xpair_attribute_master WHERE xpair_io_id = $1 ORDER BY placement_sequence ASC`,
       [xpair_io_id]
@@ -39,8 +39,8 @@ exports.getXpairData = async (req, res) => {
     //   data: output
     // });
 
-    
-    return res.json(output);  
+
+    return res.json(output);
 
   } catch (err) {
     console.error(err);
