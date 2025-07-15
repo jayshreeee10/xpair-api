@@ -11,6 +11,9 @@ const router = express.Router();
 const xpairController = require('../controllers/xpairController');
 
 // POST endpoint for crop sowing data
-router.post('/xpair', xpairController.getCropSowingData);
+// router.post('/xpair', xpairController.getCropSowingData);
+
+router.post('/xpair', xpairController.getXpairData);
+
 
 module.exports = router;

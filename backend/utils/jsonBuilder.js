@@ -89,10 +89,10 @@ function buildJSON(attributes, grouped = {}, attributeMap) {
     }
 
     // Ensure plot_geometry has proper structure if it exists
-    if (obj.plot_geometry) {
-      obj.plot_geometry.type = obj.plot_geometry.type || 'MultiPolygon';
-      obj.plot_geometry.coordinates = obj.plot_geometry.coordinates || [[]];
-    }
+    // if (obj.plot_geometry) {
+    //   obj.plot_geometry.type = obj.plot_geometry.type || 'MultiPolygon';
+    //   obj.plot_geometry.coordinates = obj.plot_geometry.coordinates || [[]];
+    // }
 
     return obj;
   }
