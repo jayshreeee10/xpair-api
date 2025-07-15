@@ -34,13 +34,25 @@ exports.getXpairData = async (req, res) => {
 
     const output = buildJSON(attributes, {}, attributeMap);
 
-    return res.json({
-      io_details: ioDetails[0],
-      data: output
-    });
+    // return res.json({
+    //   io_details: ioDetails[0],
+    //   data: output
+    // });
+
+    
+    return res.json(output);  
 
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+
+
+
+
+
+
+
+
