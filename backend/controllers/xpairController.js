@@ -50,3 +50,31 @@ exports.getXpairData = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+
+
+exports.getXpairStatus = async (req, res) => {
+  const { xpair_name, aip_participant_id } = req.body;
+
+  if (!xpair_name || !aip_participant_id) {
+    return res.status(400).json({ error: 'xpair_name and aip_participant_id are required' });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT status FROM xpair_master WHERE xpair_name = $1 AND aip_participant_id = $2`,
+      [xpair_name, aip_participant_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'xpair not found' });
+    }
+
+    const status = rows[0].status === 1 ? 'active' : 'inactive';
+    return res.json({ status });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+};
