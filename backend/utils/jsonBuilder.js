@@ -27,7 +27,7 @@ function buildJSON(attributes, grouped = {}, attributeMap) {
 
     for (let child of children) {
       const { attribute_id, is_master_node } = child;
-      const { attribute_name, attribute_type } = attributeMap[attribute_id];
+      const { attribute_name, data_type } = attributeMap[attribute_id];
 
       // Special case for coordinates - ensure proper GeoJSON structure
       if (attribute_name === 'coordinates') {
@@ -41,7 +41,7 @@ function buildJSON(attributes, grouped = {}, attributeMap) {
         continue;
       }
 
-      const handler = typeHandlers[attribute_type] || typeHandlers.default;
+      const handler = typeHandlers[data_type] || typeHandlers.default;
       obj[attribute_name] = is_master_node === 1 ? handler(attribute_id) : null;
     }
 
