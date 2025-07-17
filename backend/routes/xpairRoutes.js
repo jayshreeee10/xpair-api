@@ -6,9 +6,11 @@ const xpairController = require('../controllers/xpairController');
 
 
 
-router.post('/xpair', xpairController.getXpairData);
+router.post('/xpair_io_json', xpairController.getXpairData);
 
 router.post('/xpair/status', xpairController.getXpairStatus);
+
+router.post('/xpair_io_json_with_validation', xpairController.getXpairDataWithValidation);
 
 
 

@@ -1,5 +1,4 @@
-function buildJSON(attributes, grouped = {}, attributeMap) {
-  // First, group by master_node_attribute_id
+function buildJSON(attributes, grouped = {}, attributeMap, withValidation = false) {
   for (let attr of attributes) {
     const parent = attr.master_node_attribute_id || 0;
     if (!grouped[parent]) grouped[parent] = [];
@@ -10,46 +9,82 @@ function buildJSON(attributes, grouped = {}, attributeMap) {
     Object: id => build(id),
     Array: id => {
       const built = build(id);
-      // Special handling for GeoJSON coordinates
       if (attributeMap[id]?.attribute_name === 'coordinates') {
-        return [[]]; // Proper empty GeoJSON array structure for MultiPolygon
+        return withValidation
+          ? [[[buildCoordinateValidation(attributeMap[id])]]]
+          : [[[null]]]; // ← null instead of 0
       }
       return [built];
     },
-    String: () => null,
-    Numeric: () => null,
     default: () => null
   };
+
+  function buildCoordinateValidation(attrMeta) {
+    return {
+      data_type: attrMeta?.data_type || 'Number',
+      is_numeric: attrMeta?.is_numeric ?? true,
+      is_date: attrMeta?.is_date ?? false,
+      is_timestamp: attrMeta?.is_timestamp ?? false,
+      is_mandatory: attrMeta?.is_mandatory === true || attrMeta?.is_mandatory === 'TRUE'
+    };
+  }
 
   function build(parentId) {
     const children = grouped[parentId] || [];
     const obj = {};
 
     for (let child of children) {
-      const { attribute_id, is_master_node } = child;
-      const { attribute_name, attribute_type } = attributeMap[attribute_id];
+      const {
+        attribute_id,
+        is_master_node,
+        is_mandatory
+      } = child;
 
-      // Special case for coordinates - ensure proper GeoJSON structure
+      const attrMeta = attributeMap[attribute_id];
+      const {
+        attribute_name,
+        data_type,
+        min_length,
+        max_length,
+        is_numeric,
+        is_date,
+        is_timestamp,
+        enum: enumValues
+      } = attrMeta;
+
       if (attribute_name === 'coordinates') {
-        obj[attribute_name] = [[]]; // Empty but valid MultiPolygon structure
+        obj[attribute_name] = withValidation
+          ? [[[buildCoordinateValidation(attrMeta)]]]
+          : [[[null]]]; // ← changed from 0 to null
         continue;
       }
 
-      // Special case for crop_image array
       if (attribute_name === 'crop_image') {
         obj[attribute_name] = [];
         continue;
       }
 
-      const handler = typeHandlers[attribute_type] || typeHandlers.default;
-      obj[attribute_name] = is_master_node === 1 ? handler(attribute_id) : null;
-    }
+      const base = {
+        data_type,
+        is_numeric,
+        is_date,
+        is_timestamp,
+        is_mandatory: is_mandatory === true || is_mandatory === 'TRUE'
+      };
 
-    // Ensure plot_geometry has proper structure if it exists
-    // if (obj.plot_geometry) {
-    //   obj.plot_geometry.type = obj.plot_geometry.type || 'MultiPolygon';
-    //   obj.plot_geometry.coordinates = obj.plot_geometry.coordinates || [[]];
-    // }
+      if (min_length !== null && min_length !== undefined) base.min_length = min_length;
+      if (max_length !== null && max_length !== undefined) base.max_length = max_length;
+      if (enumValues?.length) base.enum = enumValues;
+
+      const handler = typeHandlers[data_type] || typeHandlers.default;
+
+      obj[attribute_name] =
+        is_master_node === 1
+          ? (data_type === 'Object' || data_type === 'Array'
+              ? handler(attribute_id)
+              : withValidation ? base : null)
+          : (withValidation ? base : null);
+    }
 
     return obj;
   }
