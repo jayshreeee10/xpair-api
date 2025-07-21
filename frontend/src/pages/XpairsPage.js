@@ -1,12 +1,13 @@
-import React from 'react';
-import { Typography } from '@mui/material';
+import { Routes, Route } from 'react-router-dom';
+import XpairList from '../components/xpairs/XpairList';
+import XpairOverview from '../components/xpairs/XpairOverview';
 
 const XpairsPage = () => {
   return (
-    <div>
-      <Typography variant="h4">Manage Xpairs</Typography>
-      <Typography>Xpair management will be implemented here.</Typography>
-    </div>
+        <Routes>
+      <Route index element={<XpairOverview />} />
+      <Route path=":ioId" element={<XpairList />} />
+    </Routes>
   );
 };
 

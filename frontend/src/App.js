@@ -10,7 +10,7 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="attributes" element={<AttributesPage />} />
-        <Route path="xpairs" element={<XpairsPage />} />
+        <Route path="xpairs/*" element={<XpairsPage />} />
         <Route path="*" element={<div>Route not found</div>} />
       </Route>
     </Routes>
