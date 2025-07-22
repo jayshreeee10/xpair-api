@@ -45,7 +45,10 @@ exports.createXpairAttribute = async (req, res) => {
             placement_sequence,
             is_mandatory
         } = req.body;
-
+        // Convert booleans to numbers
+        const isMandatory = (is_mandatory === true || is_mandatory === 'TRUE') ? 1 : 0;
+        const isMasterNode = (is_master_node === true || is_master_node === 'TRUE') ? 1 : 0;
+        const isMasterNodeArray = (is_master_node_array === true || is_master_node_array === 'TRUE') ? 1 : 0;
         const { rows } = await pool.query(
             `INSERT INTO xpair_attribute_master (
         xpair_io_id,
@@ -61,11 +64,11 @@ exports.createXpairAttribute = async (req, res) => {
                 xpair_io_id,
                 attribute_id,
                 level,
-                is_master_node,
-                is_master_node_array,
+                isMasterNode,
+                isMasterNodeArray,
                 master_node_attribute_id,
                 placement_sequence,
-                is_mandatory
+                isMandatory
             ]
         );
 
@@ -90,7 +93,9 @@ exports.updateXpairAttribute = async (req, res) => {
             placement_sequence,
             is_mandatory
         } = req.body;
-
+        const isMandatory = (is_mandatory === true || is_mandatory === 'TRUE') ? 1 : 0;
+        const isMasterNode = (is_master_node === true || is_master_node === 'TRUE') ? 1 : 0;
+        const isMasterNodeArray = (is_master_node_array === true || is_master_node_array === 'TRUE') ? 1 : 0;
         const { rows } = await pool.query(
             `UPDATE xpair_attribute_master SET
          xpair_io_id=$1,
@@ -106,11 +111,11 @@ exports.updateXpairAttribute = async (req, res) => {
                 xpair_io_id,
                 attribute_id,
                 level,
-                is_master_node,
-                is_master_node_array,
+                isMasterNode,
+                isMasterNodeArray,
                 master_node_attribute_id,
                 placement_sequence,
-                is_mandatory,
+                isMandatory,
                 id
             ]
         );
