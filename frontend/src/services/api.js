@@ -75,5 +75,8 @@ export const getXpairIOList = async () => {
 
 // Optional: If you want to show IO Name with ID
 export const getXpairIONames = () => api.get('/xpair-io-name-mapping');
-
+export const getJsonPreviewByIOName = async (xpair_io_name) => {
+  const res = await api.post('/xpair_io_json', { xpair_io_name });
+  return res.data;
+};
 export default api;

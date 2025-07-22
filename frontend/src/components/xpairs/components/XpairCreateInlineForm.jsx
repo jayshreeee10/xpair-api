@@ -7,8 +7,9 @@ import * as Yup from 'yup';
 import {
   getAttributeList,
   getXpairIOList,
-  createXpairAttribute
+  createXpairAttribute,getJsonPreviewByIOName
 } from '../../../services/api';
+import JsonPreview from './JsonPreview';
 
 const booleanOptions = ['TRUE', 'FALSE'];
 const levelOptions = [0, 1, 2, 3];
@@ -25,20 +26,12 @@ const validationSchema = Yup.object({
 });
 
 const XpairCreateInlineForm = ({ xpairIoIdFromRoute, onCreated }) => {
+  const [jsonPreview, setJsonPreview] = useState({});
+const [lastInsertedPath, setLastInsertedPath] = useState([]);
+
   const [xpairIOs, setXpairIOs] = useState([]);
   const [attributes, setAttributes] = useState([]);
 
-  useEffect(() => {
-    const fetchDropdowns = async () => {
-      const [ioList, attrList] = await Promise.all([
-        getXpairIOList(),
-        getAttributeList()
-      ]);
-      setXpairIOs(ioList);
-      setAttributes(attrList);
-    };
-    fetchDropdowns();
-  }, []);
 
   const formik = useFormik({
     initialValues: {
@@ -67,6 +60,84 @@ const XpairCreateInlineForm = ({ xpairIoIdFromRoute, onCreated }) => {
     },
   });
 
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      const [ioList, attrList] = await Promise.all([
+        getXpairIOList(),
+        getAttributeList()
+      ]);
+      setXpairIOs(ioList);
+      setAttributes(attrList);
+    };
+    fetchDropdowns();
+  }, []);
+  useEffect(() => {
+    const fetchJson = async () => {
+      if (!xpairIoIdFromRoute) return;
+
+      const selectedIO = xpairIOs.find(io => io.xpair_io_id === Number(xpairIoIdFromRoute));
+      if (!selectedIO) return;
+
+      try {
+        const preview = await getJsonPreviewByIOName(selectedIO.xpair_io_name);
+        setJsonPreview(preview);
+      } catch (error) {
+        console.error('Failed to fetch JSON preview', error);
+      }
+    };
+
+    fetchJson();
+  }, [xpairIoIdFromRoute, xpairIOs]);
+useEffect(() => {
+  if (!formik.values.attribute_id) return;
+
+const simulateJson = () => {
+  const attr = attributes.find(
+    (a) => a.attribute_id === Number(formik.values.attribute_id)
+  );
+  if (!attr) return;
+
+  const attrName = attr.attribute_name;
+  const level = Number(formik.values.level) || 0;
+
+  const path = [];
+
+  // Case 1: If master node is selected
+  if (formik.values.master_node_attribute_id) {
+    const masterAttr = attributes.find(
+      (a) => a.attribute_id === Number(formik.values.master_node_attribute_id)
+    );
+    if (masterAttr) {
+      const masterName = masterAttr.attribute_name;
+      path.push(masterName); // Nest under master node
+    }
+  } else {
+    // Case 2: Use level nesting
+    for (let i = 0; i < level; i++) {
+      path.push(`level_${i}`);
+    }
+  }
+
+  path.push(attrName); // Final field
+
+  const updated = structuredClone(jsonPreview);
+
+  // Remove previous path
+  if (lastInsertedPath.length > 0) {
+    removeFieldFromJson(updated, lastInsertedPath);
+  }
+
+  // Insert new path
+  const result = insertFieldIntoJson(updated, path, null);
+
+  setJsonPreview(result);
+  setLastInsertedPath(path); // Track it
+};
+
+
+
+  simulateJson();
+}, [formik.values.attribute_id, formik.values.level, formik.values.master_node_attribute_id]);
   const fieldStyle = {
     width: 120,
     '& .MuiInputBase-root': { height: 32 },
@@ -202,12 +273,45 @@ const XpairCreateInlineForm = ({ xpairIoIdFromRoute, onCreated }) => {
       </Grid>
 
       <Box textAlign="right" mt={2}>
+       
         <Button type="submit" variant="contained" color="primary" size="small">
           Create Xpair Attribute
         </Button>
       </Box>
+       <JsonPreview data={jsonPreview} />
     </Box>
   );
 };
 
 export default XpairCreateInlineForm;
+function insertFieldIntoJson(base, pathArray, value = null) {
+  const obj = { ...base };
+
+  let current = obj;
+  for (let i = 0; i < pathArray.length; i++) {
+    const key = pathArray[i];
+
+    if (i === pathArray.length - 1) {
+      current[key] = value;
+    } else {
+      if (!current[key] || typeof current[key] !== 'object') {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+  }
+
+  return obj;
+}
+function removeFieldFromJson(obj, pathArray) {
+  const path = [...pathArray];
+  const keyToRemove = path.pop();
+
+  let current = obj;
+  for (const key of path) {
+    if (!current[key]) return;
+    current = current[key];
+  }
+
+  delete current[keyToRemove];
+}
