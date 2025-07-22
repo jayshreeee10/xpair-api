@@ -1,37 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Paper, 
-  Button, 
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Typography
-} from '@mui/material';
+  Button,
+  message,
+  Table,
+  Input,
+  Space,
+  Modal,
+  Tag,
+  
+} from 'antd';
+
 
 import { 
-  Edit as EditIcon, 
-  Delete as DeleteIcon,
-  Add as AddIcon
-} from '@mui/icons-material';
-
-import { Link } from 'react-router-dom';
+  EditOutlined, 
+  DeleteOutlined,
+  PlusOutlined
+} from '@ant-design/icons';
 import { getAttributes, deleteAttribute } from '../../services/api';
 import AttributeForm from './AttributeForm';
+import './AttributeList.css';
 
 const AttributeList = () => {
   const [attributes, setAttributes] = useState([]);
-  const [loading, setLoading] = useState(false); // Added loading state
-  const [error, setError] = useState(null); // Added error state
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [attributeToDelete, setAttributeToDelete] = useState(null);
   const [openForm, setOpenForm] = useState(false);
   const [formMode, setFormMode] = useState('create');
@@ -45,11 +38,9 @@ const AttributeList = () => {
     try {
       setLoading(true);
       const data = await getAttributes();
-      console.log('Received data:', data);
       
       if (!Array.isArray(data)) {
         console.warn('Expected array but got:', typeof data);
-        // Convert object to array if needed
         const dataArray = Object.keys(data).map(key => ({
           id: key,
           ...data[key]
@@ -60,24 +51,51 @@ const AttributeList = () => {
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      setError(error.message);
+      message.error('Failed to fetch attributes');
     } finally {
       setLoading(false);
     }
   };
 
+  const renderEnumValues = (enums) => {
+    if (!enums || enums.length === 0) return '-';
+    
+    // Handle case where enums might be a string (JSON) or already an array
+    let enumArray = enums;
+    if (typeof enums === 'string') {
+      try {
+        enumArray = JSON.parse(enums);
+      } catch (e) {
+        console.error('Error parsing enum values:', e);
+        return '-';
+      }
+    }
+
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        {enumArray.map((value, index) => (
+          <Tag key={index} color="blue">
+            {value}
+          </Tag>
+        ))}
+      </div>
+    );
+  };
+
   const handleDeleteClick = (attribute) => {
     setAttributeToDelete(attribute);
-    setOpenDeleteDialog(true);
+    setOpenDeleteModal(true);
   };
 
   const handleDeleteConfirm = async () => {
     try {
       await deleteAttribute(attributeToDelete.attribute_id);
       fetchAttributes();
-      setOpenDeleteDialog(false);
+      setOpenDeleteModal(false);
+      message.success('Attribute deleted successfully');
     } catch (error) {
       console.error('Error deleting attribute:', error);
+      message.error('Failed to delete attribute');
     }
   };
 
@@ -96,70 +114,118 @@ const AttributeList = () => {
   const handleFormSubmit = () => {
     setOpenForm(false);
     fetchAttributes();
+    message.success(`Attribute ${formMode === 'create' ? 'created' : 'updated'} successfully`);
   };
 
+  const filteredAttributes = attributes.filter(attr =>
+    attr.attribute_name.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'attribute_id',
+      key: 'attribute_id',
+      sorter: (a, b) => a.attribute_id - b.attribute_id,
+    },
+    {
+      title: 'Name',
+      dataIndex: 'attribute_name',
+      key: 'attribute_name',
+      sorter: (a, b) => a.attribute_name.localeCompare(b.attribute_name),
+    },
+    {
+      title: 'Data Type',
+      dataIndex: 'data_type',
+      key: 'data_type',
+    },
+    {
+      title: 'Min Length',
+      dataIndex: 'min_length',
+      key: 'min_length',
+      render: (value) => value || '-',
+    },
+    {
+      title: 'Max Length',
+      dataIndex: 'max_length',
+      key: 'max_length',
+      render: (value) => value || '-',
+    },
+    {
+      title: 'Enum Values',
+      dataIndex: 'enum',
+      key: 'enum',
+      render: renderEnumValues,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      fixed: 'right',
+      width: 180,
+      render: (_, record) => (
+        <Space size="middle">
+          <Button 
+            type="primary" 
+            icon={<EditOutlined />}
+            onClick={() => handleEditClick(record)}
+          >
+            Edit
+          </Button>
+          <Button 
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteClick(record)}
+          >
+            Delete
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
   return (
-    <div>
-      <Button 
-        variant="contained" 
-        color="primary" 
-        startIcon={<AddIcon />}
-        onClick={handleCreateClick}
-        sx={{ mb: 2 }}
+    <div className="attribute-list-container">
+      <div className="attribute-list-header">
+        <Input.Search
+          placeholder="Search by attribute name"
+          allowClear
+          enterButton
+          className="search-input"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />}
+          onClick={handleCreateClick}
+        >
+          Add Attribute
+        </Button>
+      </div>
+
+      <Table
+        className="attribute-table"
+        columns={columns}
+        dataSource={filteredAttributes}
+        rowKey="attribute_id"
+        loading={loading}
+        pagination={{
+          pageSize: 7,
+          showSizeChanger: false,
+        }}
+        scroll={{ x: true }}
+      />
+
+      <Modal
+        title="Delete Attribute"
+        open={openDeleteModal}
+        onOk={handleDeleteConfirm}
+        onCancel={() => setOpenDeleteModal(false)}
+        okText="Delete"
+        cancelText="Cancel"
       >
-        Add Attribute
-      </Button>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Data Type</TableCell>
-              <TableCell>Min Length</TableCell>
-              <TableCell>Max Length</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {attributes.map((attribute) => (
-              <TableRow key={attribute.attribute_id}>
-                <TableCell>{attribute.attribute_id}</TableCell>
-                <TableCell>{attribute.attribute_name}</TableCell>
-                <TableCell>{attribute.data_type}</TableCell>
-                <TableCell>{attribute.min_length}</TableCell>
-                <TableCell>{attribute.max_length}</TableCell>
-                <TableCell>
-                  <IconButton 
-                    color="primary" 
-                    onClick={() => handleEditClick(attribute)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton 
-                    color="error" 
-                    onClick={() => handleDeleteClick(attribute)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
-        <DialogTitle>Delete Attribute</DialogTitle>
-        <DialogContent>
-          Are you sure you want to delete "{attributeToDelete?.attribute_name}"?
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error">Delete</Button>
-        </DialogActions>
-      </Dialog>
+        <p>Are you sure you want to delete "{attributeToDelete?.attribute_name}"?</p>
+      </Modal>
 
       <AttributeForm 
         open={openForm} 
@@ -167,6 +233,9 @@ const AttributeList = () => {
         onSubmit={handleFormSubmit}
         mode={formMode}
         initialValues={initialValues}
+        onError={(message) => {
+          message.error(message);
+        }}
       />
     </div>
   );

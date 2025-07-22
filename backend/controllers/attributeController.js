@@ -28,44 +28,76 @@ exports.getAttribute = async (req, res) => {
   }
 };
 
+
+
+
 // Create attribute
 exports.createAttribute = async (req, res) => {
-  try {
-    const { 
-      attribute_name, 
-      data_type, 
-      min_length, 
-      max_length, 
-      is_numeric, 
-      is_date, 
-      is_timestamp, 
-      enum: enumValues 
-    } = req.body;
+    try {
+        console.log('Raw request body:', req.body);
 
-    const { rows } = await pool.query(
-      `INSERT INTO attribute_master (
-        attribute_name, data_type, min_length, max_length, 
-        is_numeric, is_date, is_timestamp, enum
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [
-        attribute_name, 
-        data_type, 
-        min_length, 
-        max_length, 
-        is_numeric, 
-        is_date, 
-        is_timestamp, 
-        enumValues
-      ]
-    );
+        const { 
+            attribute_name,
+            data_type,
+            min_length,
+            max_length,
+            is_numeric,
+            is_date,
+            is_timestamp,
+            enum: enumValues 
+        } = req.body;
 
-    res.status(201).json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+        // Check if attribute exists
+        const existingAttribute = await pool.query(
+            'SELECT * FROM attribute_master WHERE attribute_name = $1',
+            [attribute_name]
+        );
+
+        if (existingAttribute.rows.length > 0) {
+            return res.status(400).json({ error: 'Attribute with this name already exists' });
+        }
+
+        // Convert boolean strings to actual booleans
+        const isNumericBool = is_numeric === 'TRUE';
+        const isDateBool = is_date === 'TRUE';
+        const isTimestampBool = is_timestamp === 'TRUE';
+
+        // Handle enum values - send as array or null
+        // const enumParam = (enumValues && enumValues.length > 0) ? enumValues : null;
+
+        const enumParam = (Array.isArray(enumValues) && enumValues.length > 0)
+  ? JSON.stringify(enumValues)
+  : null;
+
+
+        const { rows } = await pool.query(
+            `INSERT INTO attribute_master (
+                attribute_name, data_type, min_length, max_length, 
+                is_numeric, is_date, is_timestamp, enum
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+            [
+                attribute_name, 
+                data_type, 
+                min_length, 
+                max_length, 
+                isNumericBool, 
+                isDateBool, 
+                isTimestampBool, 
+                enumParam
+            ]
+        );
+
+        console.log('Saved attribute:', rows[0]);
+        res.status(201).json(rows[0]);
+    } catch (err) {
+        console.error('Error creating attribute:', err);
+        res.status(500).json({ 
+            error: 'Server error', 
+            details: err.message,
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
+    }
 };
-
 // Update attribute
 exports.updateAttribute = async (req, res) => {
   try {
@@ -80,6 +112,9 @@ exports.updateAttribute = async (req, res) => {
       is_timestamp, 
       enum: enumValues 
     } = req.body;
+
+    // Convert enum array to PostgreSQL JSONB format
+    const enumJson = enumValues && enumValues.length > 0 ? JSON.stringify(enumValues) : null;
 
     const { rows } = await pool.query(
       `UPDATE attribute_master SET 
@@ -100,7 +135,7 @@ exports.updateAttribute = async (req, res) => {
         is_numeric, 
         is_date, 
         is_timestamp, 
-        enumValues,
+        enumJson,  // Use the converted JSON string
         id
       ]
     );
@@ -115,6 +150,9 @@ exports.updateAttribute = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+
+
 
 // Delete attribute
 exports.deleteAttribute = async (req, res) => {

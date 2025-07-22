@@ -25,8 +25,21 @@ export const getAttributes = async () => {
 };
 
 
+export const createAttribute = async (data) => {
+  try {
+    const response = await api.post('/attributes', data);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data.error === 'Attribute with this name already exists') {
+      throw new Error('An attribute with this name already exists');
+    }
+    throw error;
+  }
+};
+
+
 export const getAttribute = (id) => api.get(`/attributes/${id}`);
-export const createAttribute = (data) => api.post('/attributes', data);
+// export const createAttribute = (data) => api.post('/attributes', data);
 export const updateAttribute = (id, data) => api.put(`/attributes/${id}`, data);
 export const deleteAttribute = (id) => api.delete(`/attributes/${id}`);
 
