@@ -295,32 +295,66 @@ const AttributeForm = ({ open, onClose, onSubmit, mode, initialValues, onError }
     }
   }, [initialValues, form]);
 
-  const validationSchema = Yup.object({
-    attribute_name: Yup.string()
-      .required('Attribute name is required')
-      .test(
-        'unique-name',
-        'An attribute with this name already exists',
-        (value) => {
-          if (mode === 'edit' && value === initialValues?.attribute_name) {
-            return true;
-          }
-          return !attributeNames.includes(value);
-        }
-      ),
-    data_type: Yup.string()
-      .required('Data type is required')
-      .matches(/^[a-zA-Z]+$/, 'Data type must contain only letters'),
-    min_length: Yup.number().nullable().min(0, 'Must be positive'),
-    max_length: Yup.number()
-      .nullable()
-      .min(Yup.ref('min_length'), 'Max length must be greater than or equal to min length'),
-    is_numeric: Yup.string().oneOf(booleanOptions),
-    is_date: Yup.string().oneOf(booleanOptions),
-    is_timestamp: Yup.string().oneOf(booleanOptions),
-    enum: Yup.array().of(Yup.string()).nullable(),
-  });
+  // const validationSchema = Yup.object({
+  //   attribute_name: Yup.string()
+  //     .required('Attribute name is required')
+  //     .test(
+  //       'unique-name',
+  //       'An attribute with this name already exists',
+  //       (value) => {
+  //         if (mode === 'edit' && value === initialValues?.attribute_name) {
+  //           return true;
+  //         }
+  //         return !attributeNames.includes(value);
+  //       }
+  //     ),
+  //   data_type: Yup.string()
+  //     .required('Data type is required')
+  //     .matches(/^[a-zA-Z]+$/, 'Data type must contain only letters'),
+  //   min_length: Yup.number().nullable().min(0, 'Must be positive'),
+  //   max_length: Yup.number()
+  //     .nullable()
+  //     .min(Yup.ref('min_length'), 'Max length must be greater than or equal to min length'),
+  //   is_numeric: Yup.string().oneOf(booleanOptions),
+  //   is_date: Yup.string().oneOf(booleanOptions),
+  //   is_timestamp: Yup.string().oneOf(booleanOptions),
+  //   enum: Yup.array().of(Yup.string()).nullable(),
+  // });
 
+  
+  const validationSchema = Yup.object({
+  attribute_name: Yup.string()
+    .required('Attribute name is required')
+    .test(
+      'unique-name',
+      'An attribute with this name already exists',
+      (value) => {
+        if (mode === 'edit' && value === initialValues?.attribute_name) {
+          return true;
+        }
+        return !attributeNames.includes(value);
+      }
+    ),
+  data_type: Yup.string()
+    .required('Data type is required')
+    .matches(/^[a-zA-Z]+$/, 'Data type must contain only letters'),
+  min_length: Yup.number().nullable().min(0, 'Must be positive'),
+  max_length: Yup.number()
+    .nullable()
+    .min(Yup.ref('min_length'), 'Max length must be greater than or equal to min length'),
+  is_numeric: Yup.string()
+    .oneOf(booleanOptions)
+    .required('Is Numeric is required'),
+  is_date: Yup.string()
+    .oneOf(booleanOptions)
+    .required('Is Date is required'),
+  is_timestamp: Yup.string()
+    .oneOf(booleanOptions)
+    .required('Is Timestamp is required'),
+  enum: Yup.array().of(Yup.string()).nullable(),
+});
+
+  
   const handleSubmit = async (values) => {
     try {
       await validationSchema.validate(values, { abortEarly: false });
@@ -417,21 +451,24 @@ const AttributeForm = ({ open, onClose, onSubmit, mode, initialValues, onError }
           <Input type="number" min={0} placeholder="Enter max length" />
         </Form.Item>
 
-        <Form.Item label="Is Numeric" name="is_numeric">
+        <Form.Item label="Is Numeric" name="is_numeric"
+        rules={[{ required: true, message: 'Please select whether it is numeric!' }]}>
           <Radio.Group>
             <Radio value="TRUE">Yes</Radio>
             <Radio value="FALSE">No</Radio>
           </Radio.Group>
         </Form.Item>
 
-        <Form.Item label="Is Date" name="is_date">
+        <Form.Item label="Is Date" name="is_date" 
+        rules={[{ required: true, message: 'Please select whether it is a date!' }]}>
           <Radio.Group>
             <Radio value="TRUE">Yes</Radio>
             <Radio value="FALSE">No</Radio>
           </Radio.Group>
         </Form.Item>
 
-        <Form.Item label="Is Timestamp" name="is_timestamp">
+        <Form.Item label="Is Timestamp" name="is_timestamp"
+        rules={[{ required: true, message: 'Please select whether it is a timestamp!' }]}>
           <Radio.Group>
             <Radio value="TRUE">Yes</Radio>
             <Radio value="FALSE">No</Radio>
