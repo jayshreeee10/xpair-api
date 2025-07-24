@@ -1,0 +1,102 @@
+/* Main container styling */
+.xpair-container {
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+/* Header section */
+.xpair-header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Search container */
+.xpair-search-container {
+  margin-bottom: 20px;
+}
+
+/* Table container */
+
+/* Table section styling */
+.xpair-table-section {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.xpair-table-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+/* Table container adjustments */
+.xpair-table-container {
+  background-color: white;
+  overflow: hidden;
+}
+
+/* Table styling */
+.xpair-table {
+  width: 100%;
+}
+
+.xpair-table .ant-table-thead > tr > th {
+  background-color: #f0f2f5;
+  font-weight: 600;
+}
+
+/* Tag styling */
+.xpair-tag-yes {
+  background-color: #f6ffed;
+  border-color: #b7eb8f;
+  color: #52c41a;
+}
+
+.xpair-tag-no {
+  background-color: #fff2f0;
+  border-color: #ffccc7;
+  color: #f5222d;
+}
+
+/* Action buttons */
+.xpair-action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.xpair-action-button {
+  padding: 0 8px;
+}
+
+/* Modal styling */
+.xpair-modal .ant-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.xpair-modal .ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .xpair-container {
+    padding: 10px;
+  }
+  
+  .xpair-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .xpair-action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
