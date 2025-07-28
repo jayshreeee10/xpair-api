@@ -78,18 +78,34 @@ function buildJSON(attributes, grouped = {}, attributeMap, withValidation = fals
 
       const handler = typeHandlers[data_type] || typeHandlers.default;
 
-      obj[attribute_name] =
-        is_master_node === 1
-          ? (data_type === 'Object' || data_type === 'Array'
-              ? handler(attribute_id)
-              : withValidation ? base : null)
-          : (withValidation ? base : null);
+      //   obj[attribute_name] =
+      //     is_master_node === 1
+      //       ? (data_type === 'Object' || data_type === 'Array'
+      //           ? handler(attribute_id)
+      //           : withValidation ? base : null)
+      //       : (withValidation ? base : null);
+      // }
+      if (is_master_node === 1) {
+        if (data_type === 'Object') {
+          obj[attribute_name] = build(attribute_id); // just object
+        } else if (data_type === 'Array') {
+          if (child.is_master_node_array === 1) {
+            obj[attribute_name] = [build(attribute_id)]; // array of object
+          } else {
+            obj[attribute_name] = build(attribute_id); // object, not array
+          }
+        } else {
+          obj[attribute_name] = withValidation ? base : null;
+        }
+      } else {
+        obj[attribute_name] = withValidation ? base : null;
+      }
+
+    }
+      return obj;
     }
 
-    return obj;
+    return build(0);
   }
 
-  return build(0);
-}
-
-module.exports = { buildJSON };
+  module.exports = { buildJSON };
