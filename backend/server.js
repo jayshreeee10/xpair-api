@@ -6,13 +6,11 @@ const app = express();
 
 const xpairRoutes = require('./routes/xpairRoutes');
 
-const attributeRoutes = require('./routes/attributeRoutes'); // Add this line
-const xpairControllerRoutes = require('./routes/xpairControllerRoutes');
-const xpairIORoutes = require('./routes/xpairIORoutes');
+
 
 app.use(express.json());
 
-// Enhanced CORS configuration
+//Enhanced CORS configuration
 app.use(cors({
   origin: 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -24,9 +22,7 @@ app.use(cors({
 
 
 app.use('/api', xpairRoutes);
-app.use('/api', attributeRoutes);
-app.use('/api', xpairControllerRoutes);
-app.use('/api', xpairIORoutes);
+
 
 
 // Health check endpoint
