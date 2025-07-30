@@ -120,18 +120,36 @@ function buildJSON(attributes, grouped = {}, attributeMap, withValidation = fals
     grouped[parent].push(attr);
   }
 
+  // function buildValidationBase(attrMeta, isMandatory) {
+  //   return {
+  //     data_type: attrMeta?.data_type || 'String',
+  //     is_numeric: attrMeta?.is_numeric ?? false,
+  //     is_date: attrMeta?.is_date ?? false,
+  //     is_timestamp: attrMeta?.is_timestamp ?? false,
+  //     is_mandatory: isMandatory === true || isMandatory === 'TRUE',
+  //     ...(attrMeta?.min_length !== undefined && { min_length: attrMeta.min_length }),
+  //     ...(attrMeta?.max_length !== undefined && { max_length: attrMeta.max_length }),
+  //     ...(attrMeta?.enum?.length && { enum: attrMeta.enum })
+  //   };
+  // }
+
+
   function buildValidationBase(attrMeta, isMandatory) {
-    return {
-      data_type: attrMeta?.data_type || 'String',
-      is_numeric: attrMeta?.is_numeric ?? false,
-      is_date: attrMeta?.is_date ?? false,
-      is_timestamp: attrMeta?.is_timestamp ?? false,
-      is_mandatory: isMandatory === true || isMandatory === 'TRUE',
-      ...(attrMeta?.min_length !== undefined && { min_length: attrMeta.min_length }),
-      ...(attrMeta?.max_length !== undefined && { max_length: attrMeta.max_length }),
-      ...(attrMeta?.enum?.length && { enum: attrMeta.enum })
-    };
-  }
+  const base = {
+    data_type: attrMeta?.data_type || 'String',
+    ...(attrMeta?.is_numeric ? { is_numeric: true } : {}),
+    ...(attrMeta?.is_date ? { is_date: true } : {}),
+    ...(attrMeta?.is_timestamp ? { is_timestamp: true } : {}),
+    ...(isMandatory === true || isMandatory === 'TRUE' ? { is_mandatory: true } : {}),
+    ...(attrMeta?.min_length !== undefined && attrMeta.min_length !== null ? { min_length: attrMeta.min_length } : {}),
+    ...(attrMeta?.max_length !== undefined && attrMeta.max_length !== null ? { max_length: attrMeta.max_length } : {}),
+    ...(attrMeta?.enum?.length ? { enum: attrMeta.enum } : {})
+  };
+  
+  return base;
+}
+
+
 
   function build(parentId) {
     const children = grouped[parentId] || [];
